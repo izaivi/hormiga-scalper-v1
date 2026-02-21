@@ -1,0 +1,10 @@
+{
+  "name": "pm-trader",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@polymarket/clob-client": "5.2.3",
+    "dotenv": "^16.4.5",
+    "ethers": "5.8.0"
+  }
+}
