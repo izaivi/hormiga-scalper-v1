@@ -8,6 +8,7 @@ import path from "node:path";
 import { tgSend } from "./telegram.js";
 import { getUsdcBalance } from "./balance.js";
 import { getOpenPositions, closePosition, cancelOpenOrders } from "./positions.js";
+import { fetchFeeRate } from "../data/polymarket.js";
 
 export async function autotraderTick({ state, snapshot }) {
   if (C.enabled !== true) return;
@@ -454,6 +455,41 @@ export async function autotraderTick({ state, snapshot }) {
     ? Math.ceil(minSize * price * buf * 100) / 100
     : C.tradeUsd;
   const tradeUsdEffective = Math.max(C.tradeUsd, minUsd);
+
+  // Fee-rate observability (lightweight): log once per token per session.
+  // Purpose: detect fee regime changes without spamming logs.
+  if (C.mode === 'live') {
+    try {
+      const up = snapshot.tokens?.upTokenId ? String(snapshot.tokens.upTokenId) : null;
+      const down = snapshot.tokens?.downTokenId ? String(snapshot.tokens.downTokenId) : null;
+      const tokenId = String(signal.outcome || '').toUpperCase() === 'UP' ? up : down;
+
+      if (tokenId) {
+        if (!state.feeRateByToken) state.feeRateByToken = {};
+        if (state.feeRateByToken[tokenId] == null) {
+          const fr = await fetchFeeRate({ tokenId });
+          // Store baseFee (number or null)
+          state.feeRateByToken[tokenId] = fr?.baseFee ?? null;
+          logJsonl(state, {
+            ts: now.toISOString(),
+            type: 'fee_rate',
+            tokenId,
+            baseFee: fr?.baseFee ?? null,
+            market: snapshot.market?.slug || null
+          });
+        }
+      }
+    } catch (e) {
+      // Best-effort only; do not block trading.
+      logJsonl(state, {
+        ts: now.toISOString(),
+        type: 'fee_rate',
+        ok: false,
+        error: String(e?.message || e).slice(0, 200),
+        market: snapshot.market?.slug || null
+      });
+    }
+  }
 
   await tgSend(`[Autotrader] Signal BUY ${signal.outcome} @ ${signal.limitPrice} ($${tradeUsdEffective})\nmarket=${snapshot.market?.slug || "-"}`);
 

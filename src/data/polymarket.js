@@ -165,6 +165,22 @@ export async function fetchOrderBook({ tokenId }) {
   return await res.json();
 }
 
+// Fee-rate endpoint (crypto markets)
+// GET /fee-rate?token_id=<TOKEN_ID>
+// Returns: { base_fee: <number> } (meaning depends on Polymarket's current fee system)
+export async function fetchFeeRate({ tokenId }) {
+  const url = new URL("/fee-rate", CONFIG.clobBaseUrl);
+  url.searchParams.set("token_id", String(tokenId));
+
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`CLOB fee-rate error: ${res.status} ${await res.text()}`);
+  }
+  const data = await res.json();
+  const baseFee = toNumber(data?.base_fee);
+  return { baseFee, raw: data };
+}
+
 export function summarizeOrderBook(book, depthLevels = 5) {
   const bids = Array.isArray(book?.bids) ? book.bids : [];
   const asks = Array.isArray(book?.asks) ? book.asks : [];

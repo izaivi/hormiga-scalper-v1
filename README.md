@@ -25,6 +25,20 @@ Based on original work by @krajekis (console UI/template credit). This repositor
 
 ---
 
+## 2026 market mechanics note (fees / latency)
+Polymarket’s crypto markets have evolved (fees and faster execution). Practical takeaways:
+- Do **not** assume a taker “buffer” exists.
+- Fees can materially change breakeven, especially near ~50/50 pricing.
+- This repo includes lightweight fee observability (see below) so you can detect regime changes early.
+
+### Fee-rate observability (lightweight)
+The CLOB exposes a fee-rate endpoint per token:
+- `GET https://clob.polymarket.com/fee-rate?token_id=<TOKEN_ID>`
+
+Hormiga logs **at most one** `fee_rate` event per token per session (to `logs/autotrader.jsonl`) when it is about to place a live order. It’s best-effort and intentionally low-noise to avoid stressing small machines.
+
+---
+
 ## Original project description
 
 A real-time console trading assistant for Polymarket **"Bitcoin Up or Down" 15-minute** markets.

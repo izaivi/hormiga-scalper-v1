@@ -507,7 +507,9 @@ async function fetchPolymarketSnapshot() {
 
 async function main() {
   const binanceStream = startBinanceTradeStream({ symbol: CONFIG.symbol });
-  const polymarketLiveStream = startPolymarketChainlinkPriceStream({});
+  const polymarketLiveStream = startPolymarketChainlinkPriceStream({
+    symbolIncludes: (process.env.POLY_PRICE_SYMBOL_INCLUDES || "btc")
+  });
   const chainlinkStream = startChainlinkPriceStream({});
 
   let prevSpotPrice = null;
